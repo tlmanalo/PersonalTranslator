@@ -17,7 +17,7 @@ app = Flask(__name__)
 
 configuration = Configuration(access_token=os.environ["CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["CHANNEL_SECRET"])
-anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=30.0)
 
 YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
 
@@ -119,29 +119,47 @@ def is_english(text: str) -> bool:
 
 
 def translate_to_thai(text: str) -> str:
-    response = anthropic_client.messages.create(
-        model="claude-opus-4-7",
-        max_tokens=1024,
-        temperature=0,
-        messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
-    )
-    return response.content[0].text
+    print(f"[translate_to_thai] Starting translation: {text[:80]}")
+    for attempt in range(3):
+        try:
+            response = anthropic_client.messages.create(
+                model="claude-opus-4-7",
+                max_tokens=1024,
+                temperature=0,
+                messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
+            )
+            result = response.content[0].text
+            print(f"[translate_to_thai] Translation succeeded on attempt {attempt + 1}")
+            return result
+        except Exception as e:
+            print(f"[translate_to_thai] Attempt {attempt + 1} failed: {e}")
+            if attempt == 2:
+                raise
 
 
 def translate_text(text: str, system_prompt: str) -> str:
-    response = anthropic_client.messages.create(
-        model="claude-opus-4-7",
-        max_tokens=1024,
-        system=[
-            {
-                "type": "text",
-                "text": system_prompt,
-                "cache_control": {"type": "ephemeral"},
-            }
-        ],
-        messages=[{"role": "user", "content": text}],
-    )
-    return response.content[0].text
+    print(f"[translate_text] Starting translation: {text[:80]}")
+    for attempt in range(3):
+        try:
+            response = anthropic_client.messages.create(
+                model="claude-opus-4-7",
+                max_tokens=1024,
+                system=[
+                    {
+                        "type": "text",
+                        "text": system_prompt,
+                        "cache_control": {"type": "ephemeral"},
+                    }
+                ],
+                messages=[{"role": "user", "content": text}],
+            )
+            result = response.content[0].text
+            print(f"[translate_text] Translation succeeded on attempt {attempt + 1}")
+            return result
+        except Exception as e:
+            print(f"[translate_text] Attempt {attempt + 1} failed: {e}")
+            if attempt == 2:
+                raise
 
 
 if __name__ == "__main__":

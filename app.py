@@ -64,6 +64,7 @@ def handle_message(event):
         line_bot_api = MessagingApi(api_client)
 
         if source.type == "group":
+            print(f"[GROUP ID]: {source.group_id}")
             # Ignore messages sent by yourself in groups
             if source.user_id == YOUR_USER_ID:
                 return

@@ -19,8 +19,8 @@ configuration = Configuration(access_token=os.environ["CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["CHANNEL_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=30.0)
 
-YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
-TARGET_GROUP_ID = "C01b0b8eaa5eb8340a5b1f5bd81f2d831"
+YOUR_USER_ID = os.environ["YOUR_USER_ID"]
+TARGET_GROUP_ID = os.environ["TARGET_GROUP_ID"]
 
 SYSTEM_PROMPT_TO_ENGLISH = """You are a translation assistant. Translate the user's text to English.
 Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""

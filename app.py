@@ -48,14 +48,27 @@ def webhook():
 def handle_message(event):
     user_text = event.message.text
 
-    try:
-        translated = translate_text(user_text)
-        private_msg = f"🌐 Translation:\n\n{translated}"
-    except Exception:
-        private_msg = "Translation error. Please try again. / เกิดข้อผิดพลาดในการแปล กรุณาลองใหม่"
-
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
+
+        display_name = "Unknown User"
+        try:
+            source = event.source
+            if source.type == "group":
+                profile = line_bot_api.get_group_member_profile(source.group_id, source.user_id)
+                display_name = profile.display_name
+            elif source.type == "user":
+                profile = line_bot_api.get_profile(source.user_id)
+                display_name = profile.display_name
+        except Exception:
+            pass
+
+        try:
+            translated = translate_text(user_text)
+            private_msg = f"👤 {display_name}\n🌐 Translation:\n\n{translated}"
+        except Exception:
+            private_msg = f"👤 {display_name}\nTranslation error. Please try again. / เกิดข้อผิดพลาดในการแปล กรุณาลองใหม่"
+
         line_bot_api.push_message(
             PushMessageRequest(
                 to=TARGET_USER_ID,

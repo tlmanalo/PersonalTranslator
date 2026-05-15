@@ -125,7 +125,7 @@ def translate_to_thai(text: str) -> str:
             response = anthropic_client.messages.create(
                 model="claude-opus-4-7",
                 max_tokens=1024,
-                temperature=0,
+
                 messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
             )
             result = response.content[0].text

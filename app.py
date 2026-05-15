@@ -8,6 +8,7 @@ from linebot.v3.messaging import (
     ApiClient,
     MessagingApi,
     PushMessageRequest,
+    ReplyMessageRequest,
     TextMessage,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
@@ -18,11 +19,12 @@ configuration = Configuration(access_token=os.environ["CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["CHANNEL_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
 
-TARGET_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
+YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
 
-SYSTEM_PROMPT = """You are a translation assistant. Detect the language of the user's text.
-- If the text is in English, translate it to Thai.
-- If the text is in any other language (including Thai), translate it to English.
+SYSTEM_PROMPT_TO_ENGLISH = """You are a translation assistant. Translate the user's text to English.
+Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
+
+SYSTEM_PROMPT_TO_THAI = """You are a translation assistant. Translate the user's text to Thai.
 Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
 
 
@@ -46,46 +48,62 @@ def webhook():
 
 @handler.add(MessageEvent, message=TextMessageContent)
 def handle_message(event):
+    source = event.source
     user_text = event.message.text
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
 
-        display_name = "Unknown User"
-        try:
-            source = event.source
-            if source.type == "group":
+        if source.type == "group":
+            # Ignore messages sent by yourself in groups
+            if source.user_id == YOUR_USER_ID:
+                return
+
+            # Translate others' messages to English and push privately
+            display_name = "Unknown User"
+            try:
                 profile = line_bot_api.get_group_member_profile(source.group_id, source.user_id)
                 display_name = profile.display_name
-            elif source.type == "user":
-                profile = line_bot_api.get_profile(source.user_id)
-                display_name = profile.display_name
-        except Exception:
-            pass
+            except Exception:
+                pass
 
-        try:
-            translated = translate_text(user_text)
-            private_msg = f"👤 {display_name}\n🌐 Translation:\n\n{translated}"
-        except Exception:
-            private_msg = f"👤 {display_name}\nTranslation error. Please try again. / เกิดข้อผิดพลาดในการแปล กรุณาลองใหม่"
+            try:
+                translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
+                private_msg = f"👤 {display_name}\n🌐 Translation:\n\n{translated}"
+            except Exception:
+                private_msg = f"👤 {display_name}\nTranslation error. Please try again."
 
-        line_bot_api.push_message(
-            PushMessageRequest(
-                to=TARGET_USER_ID,
-                messages=[TextMessage(text=private_msg)],
+            line_bot_api.push_message(
+                PushMessageRequest(
+                    to=YOUR_USER_ID,
+                    messages=[TextMessage(text=private_msg)],
+                )
             )
-        )
+
+        elif source.type == "user" and source.user_id == YOUR_USER_ID:
+            # Translate your private messages to Thai and reply in chat
+            try:
+                translated = translate_text(user_text, SYSTEM_PROMPT_TO_THAI)
+                reply_msg = f"🇹🇭 Thai:\n\n{translated}"
+            except Exception:
+                reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"
+
+            line_bot_api.reply_message(
+                ReplyMessageRequest(
+                    reply_token=event.reply_token,
+                    messages=[TextMessage(text=reply_msg)],
+                )
+            )
 
 
-def translate_text(text: str) -> str:
-    # System prompt is stable across all requests — cache it to save tokens
+def translate_text(text: str, system_prompt: str) -> str:
     response = anthropic_client.messages.create(
         model="claude-opus-4-7",
         max_tokens=1024,
         system=[
             {
                 "type": "text",
-                "text": SYSTEM_PROMPT,
+                "text": system_prompt,
                 "cache_control": {"type": "ephemeral"},
             }
         ],

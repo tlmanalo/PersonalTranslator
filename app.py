@@ -95,7 +95,7 @@ def handle_message(event):
             # Translate your private messages to Thai and reply in chat
             try:
                 translated = translate_to_thai(user_text)
-                reply_msg = f"🇹🇭 Thai:\n\n{translated}"
+                reply_msg = translated
             except Exception:
                 reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"
 

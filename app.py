@@ -7,7 +7,7 @@ from linebot.v3.messaging import (
     Configuration,
     ApiClient,
     MessagingApi,
-    ReplyMessageRequest,
+    PushMessageRequest,
     TextMessage,
 )
 from linebot.v3.webhooks import MessageEvent, TextMessageContent
@@ -17,6 +17,8 @@ app = Flask(__name__)
 configuration = Configuration(access_token=os.environ["CHANNEL_ACCESS_TOKEN"])
 handler = WebhookHandler(os.environ["CHANNEL_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+TARGET_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
 
 SYSTEM_PROMPT = """You are a translation assistant. Detect the language of the user's text.
 - If the text is in English, translate it to Thai.
@@ -48,15 +50,16 @@ def handle_message(event):
 
     try:
         translated = translate_text(user_text)
+        private_msg = f"🌐 Translation:\n\n{translated}"
     except Exception:
-        translated = "Translation error. Please try again. / เกิดข้อผิดพลาดในการแปล กรุณาลองใหม่"
+        private_msg = "Translation error. Please try again. / เกิดข้อผิดพลาดในการแปล กรุณาลองใหม่"
 
     with ApiClient(configuration) as api_client:
         line_bot_api = MessagingApi(api_client)
-        line_bot_api.reply_message_with_http_info(
-            ReplyMessageRequest(
-                reply_token=event.reply_token,
-                messages=[TextMessage(text=translated)],
+        line_bot_api.push_message(
+            PushMessageRequest(
+                to=TARGET_USER_ID,
+                messages=[TextMessage(text=private_msg)],
             )
         )
 

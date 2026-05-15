@@ -24,11 +24,12 @@ YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
 SYSTEM_PROMPT_TO_ENGLISH = """You are a translation assistant. Translate the user's text to English.
 Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
 
-THAI_PROMPT_TEMPLATE = """Translate the following English text to Thai. Follow these rules strictly:
+THAI_PROMPT_TEMPLATE = """Translate the following English text to natural conversational Thai. Follow these rules strictly:
+- Translate the MEANING and INTENT, not word for word
+- Use natural casual Thai that real people use in everyday conversation
 - Always use ผม as the first person pronoun (male speaker)
-- Always end the sentence with ครับ for politeness
-- Keep a casual, conversational and friendly tone
-- Do not sound overly formal or stiff
+- Always end with ครับ for politeness
+- Avoid overly literal translations that sound unnatural
 - Reply with only the Thai translation, nothing else
 
 Text to translate:

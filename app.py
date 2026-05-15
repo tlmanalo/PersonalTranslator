@@ -30,6 +30,7 @@ THAI_PROMPT_TEMPLATE = """Translate the following English text to natural conver
 - Always use ผม as the first person pronoun (male speaker)
 - Always end with ครับ for politeness
 - Avoid overly literal translations that sound unnatural
+- NEVER translate 'good news' literally as ข่าวดี — instead use natural expressions like ดีเลยครับ, เยี่ยมเลยครับ, or ดีจังเลยครับ based on context
 - Reply with only the Thai translation, nothing else
 
 Text to translate:
@@ -121,6 +122,7 @@ def translate_to_thai(text: str) -> str:
     response = anthropic_client.messages.create(
         model="claude-opus-4-7",
         max_tokens=1024,
+        temperature=0,
         messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
     )
     return response.content[0].text

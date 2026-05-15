@@ -163,6 +163,8 @@ git push origin main
 | `CHANNEL_ACCESS_TOKEN` | LINE Channel Access Token |
 | `CHANNEL_SECRET` | LINE Channel Secret |
 | `ANTHROPIC_API_KEY` | Anthropic API Key |
+| `YOUR_USER_ID` | Your personal LINE User ID (starts with U) |
+| `TARGET_GROUP_ID` | Target LINE Group ID (starts with C) |
 
 **4. Set your Webhook URL in LINE**
 ```
@@ -173,14 +175,11 @@ https://your-app.railway.app/webhook
 
 ## ⚙️ Configuration
 
-Edit these constants in `app.py` to customize:
+All configuration is handled via environment variables — no hardcoded values in the code
 
 ```python
-# Your LINE User ID (starts with U)
-YOUR_USER_ID = "Uxxxxxxxxxxxxxxxxx"
-
-# Target group to post Thai translations into
-TARGET_GROUP_ID = "Cxxxxxxxxxxxxxxxxx"
+YOUR_USER_ID = os.environ["YOUR_USER_ID"]
+TARGET_GROUP_ID = os.environ["TARGET_GROUP_ID"]
 ```
 
 ---
@@ -214,6 +213,7 @@ Based on personal use (~200 messages/day):
 ## 🔒 Security Notes
 
 - Never commit API keys to GitHub — use environment variables
+- Never hardcode YOUR_USER_ID or TARGET_GROUP_ID in code — use environment variables
 - Keep `YOUR_USER_ID` and `TARGET_GROUP_ID` private
 - Regularly rotate your LINE Channel Access Token
 - Monitor your Anthropic API usage at [console.anthropic.com](https://console.anthropic.com)

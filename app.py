@@ -59,7 +59,11 @@ def handle_message(event):
             if source.user_id == YOUR_USER_ID:
                 return
 
-            # Translate others' messages to English and push privately
+            # Skip if the message is already in English
+            if is_english(user_text):
+                return
+
+            # Translate others' non-English messages to English and push privately
             display_name = "Unknown User"
             try:
                 profile = line_bot_api.get_group_member_profile(source.group_id, source.user_id)
@@ -94,6 +98,15 @@ def handle_message(event):
                     messages=[TextMessage(text=reply_msg)],
                 )
             )
+
+
+def is_english(text: str) -> bool:
+    response = anthropic_client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=5,
+        messages=[{"role": "user", "content": f"Is this message written in English? Reply with only YES or NO:\n\n{text}"}],
+    )
+    return response.content[0].text.strip().upper().startswith("YES")
 
 
 def translate_text(text: str, system_prompt: str) -> str:

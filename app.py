@@ -94,9 +94,12 @@ def handle_message(event):
             )
 
         elif source.type == "user" and source.user_id == YOUR_USER_ID:
-            # Translate your private messages to Thai and reply in chat
+            # Auto-detect language: English → Thai, anything else → English
             try:
-                translated = translate_to_thai(user_text)
+                if is_english(user_text):
+                    translated = translate_to_thai(user_text)
+                else:
+                    translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
                 reply_msg = translated
             except Exception:
                 reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"

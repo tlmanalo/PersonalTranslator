@@ -24,8 +24,15 @@ YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
 SYSTEM_PROMPT_TO_ENGLISH = """You are a translation assistant. Translate the user's text to English.
 Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
 
-SYSTEM_PROMPT_TO_THAI = """You are a translation assistant. Translate the user's text to Thai.
-Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
+THAI_PROMPT_TEMPLATE = """Translate the following English text to Thai. Follow these rules strictly:
+- Always use ผม as the first person pronoun (male speaker)
+- Always end the sentence with ครับ for politeness
+- Keep a casual, conversational and friendly tone
+- Do not sound overly formal or stiff
+- Reply with only the Thai translation, nothing else
+
+Text to translate:
+{text}"""
 
 
 @app.route("/health", methods=["GET"])
@@ -87,7 +94,7 @@ def handle_message(event):
         elif source.type == "user" and source.user_id == YOUR_USER_ID:
             # Translate your private messages to Thai and reply in chat
             try:
-                translated = translate_text(user_text, SYSTEM_PROMPT_TO_THAI)
+                translated = translate_to_thai(user_text)
                 reply_msg = f"🇹🇭 Thai:\n\n{translated}"
             except Exception:
                 reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"
@@ -107,6 +114,15 @@ def is_english(text: str) -> bool:
         messages=[{"role": "user", "content": f"Is this message written in English? Reply with only YES or NO:\n\n{text}"}],
     )
     return response.content[0].text.strip().upper().startswith("YES")
+
+
+def translate_to_thai(text: str) -> str:
+    response = anthropic_client.messages.create(
+        model="claude-opus-4-7",
+        max_tokens=1024,
+        messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
+    )
+    return response.content[0].text
 
 
 def translate_text(text: str, system_prompt: str) -> str:

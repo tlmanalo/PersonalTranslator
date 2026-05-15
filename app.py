@@ -20,6 +20,7 @@ handler = WebhookHandler(os.environ["CHANNEL_SECRET"])
 anthropic_client = anthropic.Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"], timeout=30.0)
 
 YOUR_USER_ID = "U4b03989bc76d4027dae55df0f6ba536a"
+TARGET_GROUP_ID = "C01b0b8eaa5eb8340a5b1f5bd81f2d831"
 
 SYSTEM_PROMPT_TO_ENGLISH = """You are a translation assistant. Translate the user's text to English.
 Reply with ONLY the translated text. Do not include explanations, labels, or any other text."""
@@ -95,22 +96,33 @@ def handle_message(event):
             )
 
         elif source.type == "user" and source.user_id == YOUR_USER_ID:
-            # Auto-detect language: English → Thai, anything else → English
-            try:
-                if is_english(user_text):
+            if is_english(user_text):
+                # English → translate to Thai → post directly to group
+                try:
                     translated = translate_to_thai(user_text)
-                else:
-                    translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
-                reply_msg = translated
-            except Exception:
-                reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"
+                except Exception:
+                    translated = "Translation error. / เกิดข้อผิดพลาดในการแปล"
 
-            line_bot_api.reply_message(
-                ReplyMessageRequest(
-                    reply_token=event.reply_token,
-                    messages=[TextMessage(text=reply_msg)],
+                line_bot_api.push_message(
+                    PushMessageRequest(
+                        to=TARGET_GROUP_ID,
+                        messages=[TextMessage(text=translated)],
+                    )
                 )
-            )
+            else:
+                # Thai/other → translate to English → reply privately
+                try:
+                    translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
+                    reply_msg = translated
+                except Exception:
+                    reply_msg = "Translation error. / เกิดข้อผิดพลาดในการแปล"
+
+                line_bot_api.reply_message(
+                    ReplyMessageRequest(
+                        reply_token=event.reply_token,
+                        messages=[TextMessage(text=reply_msg)],
+                    )
+                )
 
 
 def is_english(text: str) -> bool:

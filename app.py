@@ -139,7 +139,7 @@ def translate_to_thai(text: str) -> str:
     for attempt in range(3):
         try:
             response = anthropic_client.messages.create(
-                model="claude-haiku-4-5-20251001",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
 
                 messages=[{"role": "user", "content": THAI_PROMPT_TEMPLATE.format(text=text)}],
@@ -158,7 +158,7 @@ def translate_text(text: str, system_prompt: str) -> str:
     for attempt in range(3):
         try:
             response = anthropic_client.messages.create(
-                model="claude-haiku-4-5-20251001",
+                model="claude-sonnet-4-6",
                 max_tokens=1024,
                 system=[
                     {

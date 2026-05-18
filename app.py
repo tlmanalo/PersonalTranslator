@@ -70,11 +70,13 @@ def handle_message(event):
             if source.user_id == YOUR_USER_ID:
                 return
 
-            # Skip if the message is already in English
-            if is_english(user_text):
+            mentioned = is_user_mentioned(event)
+
+            # Skip English messages unless you are specifically mentioned or @All is used
+            if is_english(user_text) and not mentioned:
                 return
 
-            # Translate others' non-English messages to English and push privately
+            # Translate others' messages to English and push privately
             display_name = "Unknown User"
             try:
                 profile = line_bot_api.get_group_member_profile(source.group_id, source.user_id)
@@ -82,11 +84,15 @@ def handle_message(event):
             except Exception:
                 pass
 
+            mention_tag = " 📣" if mentioned else ""
             try:
-                translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
-                private_msg = f"👤 {display_name}\n🌐 Translation:\n\n{translated}"
+                if is_english(user_text):
+                    private_msg = f"👤 {display_name}{mention_tag}\n💬 (English — you were mentioned):\n\n{user_text}"
+                else:
+                    translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
+                    private_msg = f"👤 {display_name}{mention_tag}\n🌐 Translation:\n\n{translated}"
             except Exception:
-                private_msg = f"👤 {display_name}\nTranslation error. Please try again."
+                private_msg = f"👤 {display_name}{mention_tag}\nTranslation error. Please try again."
 
             line_bot_api.push_message(
                 PushMessageRequest(
@@ -123,6 +129,18 @@ def handle_message(event):
                         messages=[TextMessage(text=reply_msg)],
                     )
                 )
+
+
+def is_user_mentioned(event) -> bool:
+    mention = getattr(event.message, 'mention', None)
+    if not mention or not mention.mentionees:
+        return False
+    for mentionee in mention.mentionees:
+        if mentionee.type == "all":
+            return True
+        if mentionee.type == "user" and mentionee.user_id == YOUR_USER_ID:
+            return True
+    return False
 
 
 def is_english(text: str) -> bool:

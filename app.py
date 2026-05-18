@@ -85,15 +85,23 @@ def handle_message(event):
             except Exception:
                 pass
 
+            group_name = "Unknown Group"
+            try:
+                summary = line_bot_api.get_group_summary(source.group_id)
+                group_name = truncate(summary.group_name)
+            except Exception:
+                pass
+
             mention_tag = " 📣" if mentioned else ""
+            header = f"👥 {group_name} · 👤 {display_name}{mention_tag}"
             try:
                 if is_english(user_text):
-                    private_msg = f"👤 {display_name}{mention_tag}\n💬 (English — you were mentioned):\n\n{user_text}"
+                    private_msg = f"{header}\n💬 (English — you were mentioned):\n\n{user_text}"
                 else:
                     translated = translate_text(user_text, SYSTEM_PROMPT_TO_ENGLISH)
-                    private_msg = f"👤 {display_name}{mention_tag}\n🌐 Translation:\n\n{translated}"
+                    private_msg = f"{header}\n🌐 Translation:\n\n{translated}"
             except Exception:
-                private_msg = f"👤 {display_name}{mention_tag}\nTranslation error. Please try again."
+                private_msg = f"{header}\nTranslation error. Please try again."
 
             line_bot_api.push_message(
                 PushMessageRequest(
@@ -130,6 +138,10 @@ def handle_message(event):
                         messages=[TextMessage(text=reply_msg)],
                     )
                 )
+
+
+def truncate(text: str, max_len: int = 20) -> str:
+    return text if len(text) <= max_len else text[:max_len] + "…"
 
 
 _LAUGHTER_RE = re.compile(

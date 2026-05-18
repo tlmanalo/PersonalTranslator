@@ -1,4 +1,5 @@
 import os
+import re
 import anthropic
 from flask import Flask, request, abort
 from linebot.v3 import WebhookHandler
@@ -105,7 +106,7 @@ def handle_message(event):
             if is_english(user_text):
                 # English → translate to Thai → post directly to group
                 try:
-                    translated = translate_to_thai(user_text)
+                    translated = normalize_laughter(user_text) or translate_to_thai(user_text)
                 except Exception:
                     translated = "Translation error. / เกิดข้อผิดพลาดในการแปล"
 
@@ -129,6 +130,15 @@ def handle_message(event):
                         messages=[TextMessage(text=reply_msg)],
                     )
                 )
+
+
+_LAUGHTER_RE = re.compile(
+    r'^[\s]*((ha){2,}|(he){2,}|(hi){2,}|lol+|lmao|lmfao|555+|xd)[\s!~]*$',
+    re.IGNORECASE,
+)
+
+def normalize_laughter(text: str) -> str | None:
+    return "5555" if _LAUGHTER_RE.match(text.strip()) else None
 
 
 def is_user_mentioned(event) -> bool:
